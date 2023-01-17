@@ -8,6 +8,47 @@ type WorldState = {
     world_transforms: WorldTransformMap;
 }
 
+type EdgeMap = {
+    [key: number]: {
+        type: null | "rigid-known" | "rigid-unknown" | "non-rigid-known" | "non-rigid-unknown";
+        noise: number;
+    }
+}
+
+type SolvedTransform = [
+    [number, number, number, number],
+    [number, number, number, number],
+    [number, number, number, number],
+    [number, number, number, number] // Transform that is solved / known
+]
+
+type UnsolvedTransform = [
+    [null, null, null, null],
+    [null, null, null, null],
+    [null, null, null, null],
+    [null, null, null, null] // Transform that is unsolved but exists
+]
+
+type Transform = SolvedTransform | UnsolvedTransform;
+
+type TransformMap = {
+    [key: number]: { // Frame number
+        [key: number]: { // Node ID
+            [key: number]:  // Neighbor ID
+                Transform
+        }
+    }
+}
+
+type WorldTransformMap = {
+    [key: number]: { // Frame number
+        [key: number]: { // Node ID
+            [key: number]:  // Neighbor ID
+                SolvedTransform
+        }
+    }
+}
+            
 export function Scene() {
     // Create a state to hold the world state
     const [worldState, setWorldState] = useState<WorldState>();
@@ -19,7 +60,7 @@ export function Scene() {
         console.log("Socket initialized")
         // Listen for the "graph" event
         socket.current.on("graph", (graph: WorldState) => {
-            // setWorldState(graph);
+            setWorldState(graph as WorldState);
             console.log(graph);
         });
         // Clean up the socket when the component unmounts
