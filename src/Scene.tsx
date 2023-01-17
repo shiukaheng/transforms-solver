@@ -1,6 +1,6 @@
-import { Fragment, useEffect, useCallback, useRef, useState } from "react";
-// Import socket.io-client
+import { Fragment, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { z } from "zod";
 
 type WorldState = {
     edges: EdgeMap;
@@ -32,19 +32,18 @@ type UnsolvedTransform = [
 type Transform = SolvedTransform | UnsolvedTransform;
 
 type TransformMap = {
-    [key: number]: { // Frame number
-        [key: number]: { // Node ID
-            [key: number]:  // Neighbor ID
+    [key: number]: { // Node index
+        [key: number]: { // Neighbor index
+            [key: number]:  // Frame index
                 Transform
         }
     }
 }
 
 type WorldTransformMap = {
-    [key: number]: { // Frame number
-        [key: number]: { // Node ID
-            [key: number]:  // Neighbor ID
-                SolvedTransform
+    [key: number]: { // Node index
+        [key: number]: { // Frame index
+            SolvedTransform
         }
     }
 }
