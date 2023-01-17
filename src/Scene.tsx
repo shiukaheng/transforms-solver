@@ -2,52 +2,61 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { z } from "zod";
 
-type WorldState = {
-    edges: EdgeMap;
-    local_transforms: TransformMap;
-    world_transforms: WorldTransformMap;
-}
+// 4x4 matrix, but all null
+export const unsolvedTransformSchema = z.array(z.array(z.nullable(z.number()))).refine(
+    (arr) => arr.length === 4 && arr.every((row) => row.length === 4),
+    "Must be a 4x4 matrix"
+);
 
-type EdgeMap = {
-    [key: number]: {
-        type: null | "rigid-known" | "rigid-unknown" | "non-rigid-known" | "non-rigid-unknown";
-        noise: number;
-    }
-}
+// 4x4 matrix, but all numbers
+export const solvedTransformSchema = z.array(z.array(z.number())).refine(
+    (arr) => arr.length === 4 && arr.every((row) => row.length === 4),
+    "Must be a 4x4 matrix"
+);
 
-type SolvedTransform = [
-    [number, number, number, number],
-    [number, number, number, number],
-    [number, number, number, number],
-    [number, number, number, number] // Transform that is solved / known
-]
+// Either a solved or unsolved transform
+export const transformSchema = z.union([unsolvedTransformSchema, solvedTransformSchema]);
 
-type UnsolvedTransform = [
-    [null, null, null, null],
-    [null, null, null, null],
-    [null, null, null, null],
-    [null, null, null, null] // Transform that is unsolved but exists
-]
+// A map of transforms from one node to another
+export const transformMapSchema = z.record(
+    z.record(
+        z.record(transformSchema)
+    )
+);
 
-type Transform = SolvedTransform | UnsolvedTransform;
+// A map of world transforms
+export const worldTransformMapSchema = z.record(
+    z.record(
+        solvedTransformSchema
+    )
+);
 
-type TransformMap = {
-    [key: number]: { // Node index
-        [key: number]: { // Neighbor index
-            [key: number]:  // Frame index
-                Transform
-        }
-    }
-}
+// A map of edges
+export const edgeMapSchema = z.record(
+    z.record(
+        z.object({
+            type: z.union([z.literal(null), z.literal("rigid-known"), z.literal("rigid-unknown"), z.literal("non-rigid-known"), z.literal("non-rigid-unknown")]),
+            noise: z.number().nullable(),
+        })
+    )
+);
 
-type WorldTransformMap = {
-    [key: number]: { // Node index
-        [key: number]: { // Frame index
-            SolvedTransform
-        }
-    }
-}
-            
+// The world state
+export const worldStateSchema = z.object({
+    edges: edgeMapSchema,
+    local_transforms: transformMapSchema,
+    world_transforms: worldTransformMapSchema
+});
+
+// Inferred types
+export type WorldState = z.infer<typeof worldStateSchema>;
+export type EdgeMap = z.infer<typeof edgeMapSchema>;
+export type TransformMap = z.infer<typeof transformMapSchema>;
+export type WorldTransformMap = z.infer<typeof worldTransformMapSchema>;
+export type Transform = z.infer<typeof transformSchema>;
+export type SolvedTransform = z.infer<typeof solvedTransformSchema>;
+export type UnsolvedTransform = z.infer<typeof unsolvedTransformSchema>;
+
 export function Scene() {
     // Create a state to hold the world state
     const [worldState, setWorldState] = useState<WorldState>();
@@ -59,8 +68,10 @@ export function Scene() {
         console.log("Socket initialized")
         // Listen for the "graph" event
         socket.current.on("graph", (graph: WorldState) => {
-            setWorldState(graph as WorldState);
+            // Validate the graph
             console.log(graph);
+            worldStateSchema.parse(graph);
+            setWorldState(graph as WorldState);
         });
         // Clean up the socket when the component unmounts
         return () => {
