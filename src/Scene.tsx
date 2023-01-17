@@ -1,3 +1,4 @@
+import { TransformControls } from "@react-three/drei";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { z } from "zod";
@@ -14,7 +15,7 @@ export const solvedTransformSchema = z.array(z.array(z.number())).refine(
     "Must be a 4x4 matrix"
 );
 
-// Either a solved or unsolved transform
+// Either a solved or unsolved transformf
 export const transformSchema = z.union([unsolvedTransformSchema, solvedTransformSchema]);
 
 // A map of transforms from one node to another
@@ -57,6 +58,38 @@ export type Transform = z.infer<typeof transformSchema>;
 export type SolvedTransform = z.infer<typeof solvedTransformSchema>;
 export type UnsolvedTransform = z.infer<typeof unsolvedTransformSchema>;
 
+const TestComponent = () => {
+    console.log("Rendering");
+    return null;
+}
+
+function transformTransform(transform: Transform, activeFrame: number): Transform {
+    // Return the flattened transform of the active frame, but transpose it
+    const matrix = transform[activeFrame];
+    return [
+        [matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0]],
+        [matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1]],
+        [matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2]],
+        [matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3]],
+    ]
+}
+
+function TransformVisualizer({transform, activeFrame=0}: {transform: SolvedTransform, activeFrame: number}) {
+    const groupRef = useRef<THREE.Group>();
+    useEffect(() => {
+        console.log("Updating transform, ", transform); 
+        // Disable auto updates
+        // groupRef.current?.matrixAutoUpdate = false;
+        // Set the matrix
+        groupRef.current?.matrix.fromArray(transformTransform(transform, activeFrame).flat());
+    }, [transform]);
+    return (
+        <group ref={groupRef} matrixAutoUpdate={false}>
+            <TransformControls mode="translate" enabled={false} />
+        </group>
+    )
+}
+
 export function Scene() {
     // Create a state to hold the world state
     const [worldState, setWorldState] = useState<WorldState>();
@@ -82,8 +115,18 @@ export function Scene() {
     return (
         <Fragment>
             <ambientLight/>
-            <mesh>
-                
+            {
+                worldState && (
+                    worldState.world_transforms && (
+                        Object.entries(worldState.world_transforms).map(([node, transform]) => (
+                            <TransformVisualizer key={node} transform={transform}/>
+                        ))
+                    )
+                )
+            }
+            <mesh scale={10} rotation={[Math.PI/2,0,0]}>
+                <planeGeometry args={[1, 1, 50, 50]}/>
+                <meshBasicMaterial wireframe color="black"/>
             </mesh>
         </Fragment>
     )
