@@ -63,17 +63,19 @@ class TransformationGraph:
         self._matrix = np.nan * np.ones((num_nodes, num_nodes, frames, 4, 4))
 
         # Create a seperate np object matrix for the edge types, set to None (not np.nan) initially
-        self._types = np.empty((num_nodes, num_nodes, frames), dtype=object)
+        self._types = np.empty((num_nodes, num_nodes), dtype=object)
 
         # Create a seperate matrix for the noise of each edge
-        self._noise = np.nan * np.ones((num_nodes, num_nodes, frames))
+        self._noise = np.nan * np.ones((num_nodes, num_nodes))
 
         # Set the matrix edge types and noise
         for edge in edges:
-            self._types[edge[0], edge[1], :] = edge[2]
-            self._types[edge[1], edge[0], :] = edge[2]
-            self._noise[edge[0], edge[1], :] = edge[3]
-            self._noise[edge[1], edge[0], :] = edge[3]
+            # Set edge type
+            self._types[edge[0], edge[1]] = edge[2]
+            self._types[edge[1], edge[0]] = edge[2]
+            # Set noise
+            self._noise[edge[0], edge[1]] = edge[3]
+            self._noise[edge[1], edge[0]] = edge[3]
 
         # TODO: This should be in test class instead
         # # Validate intra-group edges are rigid
@@ -98,7 +100,7 @@ class TransformationGraph:
         np.ndarray: Transformation matrix
         """
         # Throw an error if there is no connection type
-        if self._types[key[0], key[1], key[2] or 0] == None:
+        if self._types[key[0], key[1]] == None:
             raise Exception("No connection type defined for edge")
         return self._matrix[key[0], key[1], key[2]]
 
@@ -110,7 +112,7 @@ class TransformationGraph:
         value (np.ndarray): Transformation matrix
         """
         # Throw an error if there is no connection type
-        if self._types[key[0], key[1], key[2] or 0] == None:
+        if self._types[key[0], key[1]] == None:
             raise Exception("No connection type defined for edge")
 
         # Set the value
@@ -119,27 +121,27 @@ class TransformationGraph:
         # Set the inverse
         self._matrix[key[1], key[0], key[2]] = np.linalg.inv(value)
 
-    def get_type(self, key: tuple[int, int, int]) -> Literal["rigid-unknown", "rigid-known", "non-rigid-unknown", "non-rigid-known"]:
+    def get_type(self, key: tuple[int, int]) -> Literal["rigid-unknown", "rigid-known", "non-rigid-unknown", "non-rigid-known"]:
         """Get the type of a given edge
 
         Parameters:
-        key (tuple[int, int, int]): Tuple of (node1, node2, frame)
+        key (tuple[int, int]): Tuple of (node1, node2)
 
         Returns:
         Literal["rigid-unknown", "rigid-known", "non-rigid-unknown", "non-rigid-known"]: Type of the edge
         """
-        return self._types[key[0], key[1], key[2]]
+        return self._types[key[0], key[1]]
 
-    def get_noise(self, key: tuple[int, int, int]) -> float:
+    def get_noise(self, key: tuple[int, int]) -> float:
         """Get the noise of a given edge
 
         Parameters:
-        key (tuple[int, int, int]): Tuple of (node1, node2, frame)
+        key (tuple[int, int]): Tuple of (node1, node2)
 
         Returns:
         float: Noise of the edge
         """
-        return self._noise[key[0], key[1], key[2]]
+        return self._noise[key[0], key[1]]
 
     def get_nodes(self) -> list[int]:
         """Get the list of nodes in the graph
@@ -161,9 +163,9 @@ class TransformationGraph:
         # print(f'Checking edges for node {node}')
         edges = []
         for i in range(self._matrix.shape[0]):
-            edge_type = self._types[node, i, 0]
+            edge_type = self._types[node, i]
             if edge_type != None:
-                edges.append((i, self._types[node, i, 0], self._noise[node, i, 0]))
+                edges.append((i, self._types[node, i], self._noise[node, i]))
         # print(f'Found edges {edges}')
         return edges
 
@@ -219,7 +221,7 @@ class TestTransformationGraph(TransformationGraph):
 
                 # Add all rigidly connected nodes to the group
                 for i in range(num_nodes):
-                    if self._types[node, i, 0] == "rigid-known" or self._types[node, i, 0] == "rigid-unknown":
+                    if self._types[node, i] == "rigid-known" or self._types[node, i] == "rigid-unknown":
                         if i not in group:
                             group.add(i)
                             queue.append(i)
