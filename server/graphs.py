@@ -40,6 +40,8 @@
 
 # Finally, we can use the graph to solve for the transformations of any node in any frame
 
+import json
+import math
 from typing import Literal
 import numpy as np
 from tools import *
@@ -313,7 +315,9 @@ class TestTransformationGraph(TransformationGraph):
         for node in range(self.num_nodes):
             world_transforms[node] = dict()
             for frame in range(self.num_frames):
+                # Remember to convert nan to None
                 world_transforms[node][frame] = self._worldTransforms[node, frame].tolist()
+                world_transforms[node][frame] = [[None if math.isnan(x) else x for x in row] for row in world_transforms[node][frame]]
                 
         return world_transforms
         # Local transform matrix and world transforms could be merged into a single matrix if we treat the world origin as a node
@@ -332,10 +336,14 @@ class TestTransformationGraph(TransformationGraph):
                 for frame in range(self.num_frames):
                     try:
                         local_transforms[node][neighbor][frame] = self[node, neighbor, frame].tolist()
+                        local_transforms[node][neighbor][frame] = [[None if math.isnan(x) else x for x in row] for row in local_transforms[node][neighbor][frame]]
                     except Exception:
                         # No connection
                         pass
         return local_transforms
+
+    # Local transform also serializes unknown transforms since they are meant to be solved
+    # World transforms on the other hand only serializes known transforms
 
     def edges_to_dict(self) -> dict[int, dict[int, dict[str, str]]]:
         """Converts the edges to a json compatible dictionary
@@ -350,6 +358,8 @@ class TestTransformationGraph(TransformationGraph):
                 edges[node][neighbor] = dict()
                 edges[node][neighbor]["type"] = self._types[node, neighbor]
                 edges[node][neighbor]["noise"] = self._noise[node, neighbor]
+                if np.isnan(edges[node][neighbor]["noise"]):
+                    edges[node][neighbor]["noise"] = None
         return edges
 
     def to_dict(self) -> dict[str, dict]:
@@ -363,5 +373,13 @@ class TestTransformationGraph(TransformationGraph):
         graph["local_transforms"] = self.local_transforms_to_dict()
         graph["edges"] = self.edges_to_dict()
         return graph
+
+    def to_json_string(self) -> str:
+        """Converts the graph to a json string
+
+        Returns:
+        str: Json string
+        """
+        return json.dumps(self.to_dict())
 
 # TODO: Reimplement TransformationGraphs using iterators so that we can use the same solvers for real time and offline

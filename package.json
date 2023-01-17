@@ -16,6 +16,7 @@
     "react-dom": "^18.1.0",
     "react-router-dom": "6",
     "react-transition-group": "^4.4.2",
+    "socket.io-client": "^4.5.4",
     "three": "^0.141.0",
     "three-stdlib": "^2.12.1",
     "typescript": "^4.6.4",
@@ -28,7 +29,7 @@
   },
   "scripts": {
     "build": "vite build",
-    "dev": "vite serve && python3 ./server/server.py",
+    "dev": "python3 ./server/server.py & vite serve",
     "server": "python3 ./server/server.py"
   }
 }
