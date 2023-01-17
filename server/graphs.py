@@ -314,6 +314,7 @@ class TestTransformationGraph(TransformationGraph):
             world_transforms[node] = dict()
             for frame in range(self.num_frames):
                 world_transforms[node][frame] = self._worldTransforms[node, frame].tolist()
+                
         return world_transforms
         # Local transform matrix and world transforms could be merged into a single matrix if we treat the world origin as a node
 
@@ -336,20 +337,20 @@ class TestTransformationGraph(TransformationGraph):
                         pass
         return local_transforms
 
-    # def edges_to_dict(self) -> dict[int, dict[int, dict[str, str]]]:
-    #     """Converts the edges to a json compatible dictionary
+    def edges_to_dict(self) -> dict[int, dict[int, dict[str, str]]]:
+        """Converts the edges to a json compatible dictionary
 
-    #     Returns:
-    #     dict[int, dict[int, dict[str, str]]]: Dictionary of edges
-    #     """
-    #     edges = dict()
-    #     for node in range(self.num_nodes):
-    #         edges[node] = dict()
-    #         for neighbor in range(self.num_nodes):
-    #             edges[node][neighbor] = dict()
-    #             edges[node][neighbor]["type"] = self._types[node, neighbor, 0]
-    #             edges[node][neighbor]["noise"] = self._types[node, neighbor, 1]
-    #     return edges
+        Returns:
+        dict[int, dict[int, dict[str, str]]]: Dictionary of edges
+        """
+        edges = dict()
+        for node in range(self.num_nodes):
+            edges[node] = dict()
+            for neighbor in range(self.num_nodes):
+                edges[node][neighbor] = dict()
+                edges[node][neighbor]["type"] = self._types[node, neighbor]
+                edges[node][neighbor]["noise"] = self._noise[node, neighbor]
+        return edges
 
     def to_dict(self) -> dict[str, dict]:
         """Converts the graph to a json compatible dictionary
@@ -360,7 +361,7 @@ class TestTransformationGraph(TransformationGraph):
         graph = dict()
         graph["world_transforms"] = self.world_transform_to_dict()
         graph["local_transforms"] = self.local_transforms_to_dict()
-        # graph["edges"] = self.edges_to_dict()
+        graph["edges"] = self.edges_to_dict()
         return graph
 
 # TODO: Reimplement TransformationGraphs using iterators so that we can use the same solvers for real time and offline
