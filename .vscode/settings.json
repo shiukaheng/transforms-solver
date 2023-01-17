@@ -7,5 +7,18 @@
         "**/.DS_Store": true,
         "**/Thumbs.db": true
     },
-    "hide-files.files": []
+    "hide-files.files": [],
+    "ros.distro": "humble",
+    "python.autoComplete.extraPaths": [
+        "/home/heng/Documents/test_ws/install/new_package/lib/python3.10/site-packages",
+        "/home/heng/Documents/test_ws/install/fundamentals/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/heng/Documents/test_ws/install/new_package/lib/python3.10/site-packages",
+        "/home/heng/Documents/test_ws/install/fundamentals/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
 }
