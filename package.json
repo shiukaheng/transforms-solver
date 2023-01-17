@@ -28,6 +28,7 @@
   },
   "scripts": {
     "build": "vite build",
-    "dev": "vite serve"
+    "dev": "vite serve && python3 ./server/server.py",
+    "server": "python3 ./server/server.py"
   }
 }
